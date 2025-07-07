@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Kelas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Manajemen Kelas</h1>
+        
+        <!-- Form untuk menambah kelas -->
+        <div class="form-section">
+            <h2>Tambah Kelas Baru</h2>
+            <form id="kelasForm">
+                <div class="form-group">
+                    <label for="nomorKelas">Nomor Kelas:</label>
+                    <input type="text" id="nomorKelas" placeholder="Contoh: 10A, 11B, 12C" required>
+                </div>
+                <button type="submit" class="btn" id="submitBtn">Tambah Kelas</button>
+            </form>
+        </div>
+        
+        <!-- Container untuk pesan -->
+        <div id="messageContainer"></div>
+        
+        <!-- Daftar kelas -->
+        <div class="kelas-section">
+            <h2>Daftar Kelas</h2>
+            <div id="kelasList" class="loading">Memuat data kelas...</div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
