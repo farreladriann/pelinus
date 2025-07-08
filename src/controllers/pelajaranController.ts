@@ -150,9 +150,9 @@ export class PelajaranController {
                 throw createHttpError(404, 'File PDF materi tidak ditemukan.');
             }
 
-            // Set response headers untuk PDF
+            // Set response headers untuk PDF download
             res.setHeader('Content-Type', 'application/pdf');
-            res.setHeader('Content-Disposition', `inline; filename="${pelajaran.namaPelajaran}.pdf"`);
+            res.setHeader('Content-Disposition', `attachment; filename="${pelajaran.namaPelajaran}.pdf"`);
             
             // Kirim file PDF
             res.send(pelajaran.filePdfMateri);

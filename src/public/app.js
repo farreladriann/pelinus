@@ -1,9 +1,6 @@
 class PelinusApp {
     constructor() {
         this.baseUrl = window.location.origin;
-        this.currentPdfDoc = null;
-        this.currentPage = 1;
-        this.totalPages = 0;
         this.init();
     }
 
@@ -273,7 +270,7 @@ class PelinusApp {
                 </div>
                 <div class="item-actions">
                     <button class="btn-info" data-action="view-pdf" data-id="${pelajaran.idPelajaran}">
-                        📄 Lihat PDF
+                        📄 Unduh PDF
                     </button>
                     <button class="btn-danger" data-action="delete-pelajaran" data-id="${pelajaran.idPelajaran}">
                         🗑️ Hapus
@@ -285,11 +282,15 @@ class PelinusApp {
             const viewPdfBtn = pelajaranCard.querySelector('[data-action="view-pdf"]');
             const deleteBtn = pelajaranCard.querySelector('[data-action="delete-pelajaran"]');
             
-            viewPdfBtn.addEventListener('click', () => {
+            viewPdfBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 this.viewPdf(pelajaran.idPelajaran);
             });
             
-            deleteBtn.addEventListener('click', () => {
+            deleteBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 this.deletePelajaran(pelajaran.idPelajaran);
             });
 
@@ -322,153 +323,28 @@ class PelinusApp {
         try {
             this.showLoading();
             
-            // Configure PDF.js worker
-            if (typeof pdfjsLib !== 'undefined') {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-            }
+            // Create a download link
+            const downloadUrl = `${this.baseUrl}/pelajaran/${idPelajaran}/pdf`;
             
-            // Fetch PDF sebagai array buffer
-            const response = await fetch(`${this.baseUrl}/pelajaran/${idPelajaran}/pdf`);
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `materi-${idPelajaran}.pdf`; // Set default filename
+            link.style.display = 'none';
             
-            if (!response.ok) {
-                throw new Error('Gagal memuat PDF');
-            }
+            // Add link to body, click it, then remove it
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
             
-            const arrayBuffer = await response.arrayBuffer();
-            
-            // Load PDF dengan PDF.js
-            const pdfDoc = await pdfjsLib.getDocument({data: arrayBuffer}).promise;
-            this.currentPdfDoc = pdfDoc;
-            this.totalPages = pdfDoc.numPages;
-            this.currentPage = 1;
-            
-            // Show modal
-            const modal = document.getElementById('pdf-modal');
-            modal.style.display = 'block';
-            
-            // Setup controls
-            this.setupPdfControls();
-            
-            // Render first page
-            await this.renderPage(1);
+            this.showAlert('Download PDF dimulai...', 'success');
             
         } catch (error) {
-            this.showAlert('Gagal memuat PDF: ' + error.message, 'error');
+            console.error('Download Error:', error);
+            this.showAlert('Gagal mengunduh PDF: ' + error.message, 'error');
         } finally {
             this.hideLoading();
         }
-    }
-
-        setupPdfControls() {
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const pageInfo = document.getElementById('page-info');
-        const modal = document.getElementById('pdf-modal');
-        const closeBtn = modal.querySelector('.close');
-
-        // Update page info
-        pageInfo.textContent = `Page ${this.currentPage} of ${this.totalPages}`;
-
-        // Update button states
-        prevBtn.disabled = this.currentPage <= 1;
-        nextBtn.disabled = this.currentPage >= this.totalPages;
-
-        // Remove existing listeners
-        prevBtn.replaceWith(prevBtn.cloneNode(true));
-        nextBtn.replaceWith(nextBtn.cloneNode(true));
-        closeBtn.replaceWith(closeBtn.cloneNode(true));
-
-        // Get fresh references
-        const newPrevBtn = document.getElementById('prev-page');
-        const newNextBtn = document.getElementById('next-page');
-        const newCloseBtn = modal.querySelector('.close');
-
-        // Add new listeners
-        newPrevBtn.addEventListener('click', () => this.previousPage());
-        newNextBtn.addEventListener('click', () => this.nextPage());
-        newCloseBtn.addEventListener('click', () => this.closePdfModal());
-
-        // Window click to close
-        const handleWindowClick = (e) => {
-            if (e.target === modal) {
-                this.closePdfModal();
-                window.removeEventListener('click', handleWindowClick);
-            }
-        };
-        window.addEventListener('click', handleWindowClick);
-    }
-
-    async renderPage(pageNumber) {
-        try {
-            const page = await this.currentPdfDoc.getPage(pageNumber);
-            const canvas = document.getElementById('pdf-canvas');
-            const context = canvas.getContext('2d');
-
-            // Calculate scale to fit container
-            const container = document.querySelector('.pdf-viewer-container');
-            const containerWidth = container.clientWidth - 40; // Account for padding
-            const containerHeight = container.clientHeight - 100; // Account for controls
-
-            const viewport = page.getViewport({ scale: 1 });
-            const scale = Math.min(
-                containerWidth / viewport.width,
-                containerHeight / viewport.height
-            );
-
-            const scaledViewport = page.getViewport({ scale });
-
-            // Set canvas dimensions
-            canvas.width = scaledViewport.width;
-            canvas.height = scaledViewport.height;
-
-            // Render page
-            const renderContext = {
-                canvasContext: context,
-                viewport: scaledViewport
-            };
-
-            await page.render(renderContext).promise;
-
-            // Update page info
-            document.getElementById('page-info').textContent = `Page ${pageNumber} of ${this.totalPages}`;
-
-            // Update button states
-            document.getElementById('prev-page').disabled = pageNumber <= 1;
-            document.getElementById('next-page').disabled = pageNumber >= this.totalPages;
-
-        } catch (error) {
-            console.error('Error rendering page:', error);
-            this.showAlert('Gagal menampilkan halaman PDF', 'error');
-        }
-    }
-
-    async previousPage() {
-        if (this.currentPage > 1) {
-            this.currentPage--;
-            await this.renderPage(this.currentPage);
-        }
-    }
-
-    async nextPage() {
-        if (this.currentPage < this.totalPages) {
-            this.currentPage++;
-            await this.renderPage(this.currentPage);
-        }
-    }
-
-    closePdfModal() {
-        const modal = document.getElementById('pdf-modal');
-        modal.style.display = 'none';
-        
-        // Clean up
-        this.currentPdfDoc = null;
-        this.currentPage = 1;
-        this.totalPages = 0;
-        
-        // Clear canvas
-        const canvas = document.getElementById('pdf-canvas');
-        const context = canvas.getContext('2d');
-        context.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     populatePelajaranDropdown() {
