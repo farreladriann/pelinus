@@ -4,19 +4,13 @@ import { uploadPelajaran } from '../config/multer';
 
 const router = express.Router();
 
-// GET all Pelajaran
-router.get('/', PelajaranController.getAllPelajaranWithAllData);
-
-// GET Logo by Pelajaran ID
-router.get('/:id/logo', PelajaranController.getLogo);
-
-// GET PDF by Pelajaran ID
-router.get('/:id/pdf', PelajaranController.getPdf);
+// DELETE delete Pelajaran by ID
+router.delete('/:idPelajaran', PelajaranController.deletePelajaranById);
 
 // POST add Pelajaran with file uploads
 router.post('/', uploadPelajaran, PelajaranController.addPelajaran);
 
-// GET all data of Pelajaran by ID
-router.get('/:id', PelajaranController.getPelajaranWithAllData);
+// GET PDF Materi by ID
+router.get('/:idPelajaran/pdf', PelajaranController.getPdfMateri);
 
 export default router;

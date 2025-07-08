@@ -1,34 +1,174 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manajemen Kelas</title>
+    <title>Pelinus Mengajar - Sistem Manajemen Pembelajaran</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Add PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>📚 Manajemen Kelas</h1>
-        
-        <!-- Form untuk menambah kelas -->
-        <div class="form-section">
-            <h2>Tambah Kelas Baru</h2>
-            <form id="kelasForm">
-                <div class="form-group">
-                    <label for="nomorKelas">Nomor Kelas:</label>
-                    <input type="text" id="nomorKelas" placeholder="Contoh: 10A, 11B, 12C" required>
+        <header>
+            <h1>🎓 Pelinus Mengajar</h1>
+        </header>
+
+        <nav class="tab-nav">
+            <button class="tab-btn active" data-tab="kelas">Kelas</button>
+            <button class="tab-btn" data-tab="pelajaran">Pelajaran</button>
+            <button class="tab-btn" data-tab="kuis">Kuis</button>
+            <button class="tab-btn" data-tab="cache">Cache Data</button>
+        </nav>
+
+        <!-- Kelas Tab -->
+        <div id="kelas-tab" class="tab-content active">
+            <div class="section">
+                <h2>📚 Manajemen Kelas</h2>
+                
+                <div class="form-section">
+                    <h3>Tambah Kelas Baru</h3>
+                    <form id="kelas-form">
+                        <div class="form-group">
+                            <label for="nomorKelas">Nomor Kelas:</label>
+                            <input type="text" id="nomorKelas" required placeholder="Contoh: 12A, 11B, 10C">
+                        </div>
+                        <button type="submit">Tambah Kelas</button>
+                    </form>
                 </div>
-                <button type="submit" class="btn" id="submitBtn">Tambah Kelas</button>
-            </form>
+
+                <div class="list-section">
+                    <h3>Daftar Kelas</h3>
+                    <div id="kelas-list" class="item-list"></div>
+                </div>
+            </div>
         </div>
-        
-        <!-- Container untuk pesan -->
-        <div id="messageContainer"></div>
-        
-        <!-- Daftar kelas -->
-        <div class="kelas-section">
-            <h2>Daftar Kelas</h2>
-            <div id="kelasList" class="loading">Memuat data kelas...</div>
+
+        <!-- Pelajaran Tab -->
+        <div id="pelajaran-tab" class="tab-content">
+            <div class="section">
+                <h2>📖 Manajemen Pelajaran</h2>
+                
+                <div class="form-section">
+                    <h3>Tambah Pelajaran Baru</h3>
+                    <form id="pelajaran-form" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="namaPelajaran">Nama Pelajaran:</label>
+                            <input type="text" id="namaPelajaran" required placeholder="Contoh: Matematika">
+                        </div>
+                        <div class="form-group">
+                            <label for="idKelas">Kelas:</label>
+                            <select id="idKelas" required>
+                                <option value="">Pilih Kelas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="logo">Logo Pelajaran:</label>
+                            <input type="file" id="logo" accept="image/*" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="filePdfMateri">File PDF Materi:</label>
+                            <input type="file" id="filePdfMateri" accept=".pdf" required>
+                        </div>
+                        <button type="submit">Tambah Pelajaran</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Daftar Pelajaran</h3>
+                    <div id="pelajaran-list" class="item-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kuis Tab -->
+        <div id="kuis-tab" class="tab-content">
+            <div class="section">
+                <h2>❓ Manajemen Kuis</h2>
+                
+                <div class="form-section">
+                    <h3>Tambah Kuis Baru</h3>
+                    <form id="kuis-form">
+                        <div class="form-group">
+                            <label for="idPelajaranKuis">Pelajaran:</label>
+                            <select id="idPelajaranKuis" required>
+                                <option value="">Pilih Pelajaran</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="nomorKuis">Nomor Kuis:</label>
+                            <input type="number" id="nomorKuis" required placeholder="Masukkan nomor kuis" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="soal">Soal:</label>
+                            <textarea id="soal" required placeholder="Masukkan soal kuis"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="opsiA">Opsi A:</label>
+                            <input type="text" id="opsiA" required placeholder="Opsi A">
+                        </div>
+                        <div class="form-group">
+                            <label for="opsiB">Opsi B:</label>
+                            <input type="text" id="opsiB" required placeholder="Opsi B">
+                        </div>
+                        <div class="form-group">
+                            <label for="opsiC">Opsi C:</label>
+                            <input type="text" id="opsiC" required placeholder="Opsi C">
+                        </div>
+                        <div class="form-group">
+                            <label for="opsiD">Opsi D:</label>
+                            <input type="text" id="opsiD" required placeholder="Opsi D">
+                        </div>
+                        <div class="form-group">
+                            <label for="opsiJawaban">Jawaban Benar:</label>
+                            <select id="opsiJawaban" required>
+                                <option value="">Pilih Jawaban</option>
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+                        <button type="submit">Tambah Kuis</button>
+                    </form>
+                </div>
+
+                <div class="list-section">
+                    <h3>Daftar Kuis</h3>
+                    <div id="kuis-list" class="item-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cache Tab -->
+        <div id="cache-tab" class="tab-content">
+            <div class="section">
+                <h2>💾 Cache Data</h2>
+                <button id="load-cache-btn">Muat Data Cache</button>
+                <div id="cache-data" class="cache-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Memuat...</p>
+    </div>
+
+    <!-- Modal for PDF Viewer -->
+    <div id="pdf-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>PDF Materi</h3>
+            <div class="pdf-viewer-container">
+                <div class="pdf-controls">
+                    <button id="prev-page">◀ Previous</button>
+                    <span id="page-info">Page 1 of 1</span>
+                    <button id="next-page">Next ▶</button>
+                </div>
+                <canvas id="pdf-canvas"></canvas>
+            </div>
         </div>
     </div>
 

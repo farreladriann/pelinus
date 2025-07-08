@@ -12,6 +12,8 @@ import connectDB from './config/connectDB';
 import helmet from 'helmet';
 import kelasRoutes from './routes/kelasRoutes';
 import pelajaranRoutes from './routes/pelajaranRoutes';
+import kuisRoutes from './routes/kuisRoutes';
+import cacheRoutes from './routes/cacheRoutes';
 // Ensure that the environment variables are loaded
 
 const PORT = process.env.PORT || 3500;
@@ -26,6 +28,8 @@ app.use(helmet());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/kelas', kelasRoutes)
 app.use('/pelajaran', pelajaranRoutes)
+app.use('/kuis', kuisRoutes);
+app.use('/cache', cacheRoutes);
 
 app.use((_req: Request, _res: Response, next: NextFunction) => {
   next(createHttpError(404, 'Not Found'));

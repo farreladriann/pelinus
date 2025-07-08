@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import createHttpError from 'http-errors';
+import crypto from 'crypto';
 import { PelajaranModel } from '../models/Pelajaran';
 import { KelasModel } from '../models/Kelas';
 
@@ -14,6 +15,7 @@ export class PelajaranController {
                 throw createHttpError(400, 'Properti "namaPelajaran" harus berupa string yang tidak kosong.');
             }
 
+            // Validasi idKelas
             if (!idKelas) {
                 throw createHttpError(400, 'Properti "idKelas" harus disediakan.');
             }
@@ -29,20 +31,26 @@ export class PelajaranController {
                 throw createHttpError(400, 'Kelas dengan ID tersebut tidak ditemukan.');
             }
 
-            // Cek duplikasi nama pelajaran
-            const existingPelajaran = await PelajaranModel.findOne({ namaPelajaran: namaPelajaran.trim() });
+            // Cek duplikasi nama pelajaran pada kelas yang sama
+            const existingPelajaran = await PelajaranModel.findOne({ namaPelajaran: namaPelajaran.trim(), idKelas });
             if (existingPelajaran) {
-                throw createHttpError(409, 'Pelajaran dengan nama tersebut sudah ada.');
+                throw createHttpError(409, 'Pelajaran dengan nama tersebut sudah ada di kelas ini.');
             }
 
+            // Generate hashes for files
+            const hashLogo = crypto.createHash('sha256').update(files.logo[0].buffer).digest('hex');
+            const hashFilePdfMateri = crypto.createHash('sha256').update(files.filePdfMateri[0].buffer).digest('hex');
+
+            // simpan pelajaran baru di database
             const pelajaranBaru = new PelajaranModel({
                 namaPelajaran: namaPelajaran.trim(),
                 logo: files.logo[0].buffer,
+                hashLogo,
                 idKelas,
                 filePdfMateri: files.filePdfMateri[0].buffer,
+                hashFilePdfMateri,
             });
 
-            // Simpan pelajaran baru ke database
             await pelajaranBaru.save();
 
             res.status(201).json({
@@ -53,6 +61,8 @@ export class PelajaranController {
                     idKelas: pelajaranBaru.idKelas,
                     logoSize: files.logo[0].size,
                     pdfSize: files.filePdfMateri[0].size,
+                    hashLogo: pelajaranBaru.hashLogo,
+                    hashFilePdfMateri: pelajaranBaru.hashFilePdfMateri,
                 },
             });
 
@@ -61,17 +71,58 @@ export class PelajaranController {
         }
     }
 
+    static async deletePelajaranById(req: Request, res: Response, next: NextFunction) {
+        const session = await PelajaranModel.startSession();
+        session.startTransaction();
+        
+        try {
+            const { idPelajaran } = req.params;
+
+            // Validasi idPelajaran
+            if (!idPelajaran) {
+                throw createHttpError(400, 'ID Pelajaran harus disediakan.');
+            }
+
+            // Cek apakah pelajaran dengan idPelajaran ada
+            const pelajaran = await PelajaranModel.findById(idPelajaran).session(session);
+            if (!pelajaran) {
+                throw createHttpError(404, 'Pelajaran tidak ditemukan.');
+            }
+
+            // also delete any associated quizzes
+            await PelajaranModel.deleteMany({ idPelajaran }, { session });
+
+            // Hapus pelajaran dari database
+            await PelajaranModel.deleteOne({ _id: idPelajaran }, { session });
+
+            await session.commitTransaction();
+
+            res.status(200).json({
+                message: 'Pelajaran berhasil dihapus',
+                idPelajaran,
+            });
+
+        } catch (error) {
+            await session.abortTransaction();
+            next(error);
+        } finally {
+            session.endSession();
+        }
+    }
+
     static async getAllPelajaranWithAllData(req: Request, res: Response, next: NextFunction) {
         try {
             const pelajaranList = await PelajaranModel.find()
-                .populate('idKelas', 'nomorKelas');
+                .populate('idKelas', 'nomorKelas')
+                .select('-filePdfMateri');
 
             const result = pelajaranList.map(pelajaran => ({
                 id: pelajaran._id,
                 namaPelajaran: pelajaran.namaPelajaran,
                 idKelas: pelajaran.idKelas,
                 logo: pelajaran.logo ? pelajaran.logo.toString('base64') : null,
-                filePdfMateri: pelajaran.filePdfMateri ? pelajaran.filePdfMateri.toString('base64') : null,
+                hashLogo: pelajaran.hashLogo,
+                hashFilePdfMateri: pelajaran.hashFilePdfMateri,
             }));
 
             res.status(200).json(result);
@@ -80,84 +131,34 @@ export class PelajaranController {
         }
     }
 
-    static async getPelajaranById(req: Request, res: Response, next: NextFunction) {
+    static async getPdfMateri(req: Request, res: Response, next: NextFunction) {
         try {
-            const { id } = req.params;
-            const pelajaran = await PelajaranModel.findById(id)
-                .populate('idKelas', 'nomorKelas')
-                .select('-logo -filePdfMateri'); // Exclude binary data
+            const { idPelajaran } = req.params;
 
+            // Validasi idPelajaran
+            if (!idPelajaran) {
+                throw createHttpError(400, 'ID Pelajaran harus disediakan.');
+            }
+
+            // Cek apakah pelajaran dengan idPelajaran ada
+            const pelajaran = await PelajaranModel.findById(idPelajaran);
             if (!pelajaran) {
-                throw createHttpError(404, 'Pelajaran tidak ditemukan');
+                throw createHttpError(404, 'Pelajaran tidak ditemukan.');
             }
 
-            res.status(200).json(pelajaran);
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    static async getLogo(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id } = req.params;
-            const pelajaran = await PelajaranModel.findById(id).select('logo');
-
-            if (!pelajaran || !pelajaran.logo) {
-                throw createHttpError(404, 'Logo tidak ditemukan');
+            if (!pelajaran.filePdfMateri) {
+                throw createHttpError(404, 'File PDF materi tidak ditemukan.');
             }
 
-            res.set('Content-Type', 'image/jpeg');
-            res.send(pelajaran.logo);
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    static async getPdf(req: Request, res: Response, next: NextFunction) {
-        try {
-            const { id } = req.params;
-            const pelajaran = await PelajaranModel.findById(id).select('filePdfMateri namaPelajaran');
-
-            if (!pelajaran || !pelajaran.filePdfMateri) {
-                throw createHttpError(404, 'File PDF tidak ditemukan');
-            }
-
-            res.set({
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': `inline; filename="${pelajaran.namaPelajaran}.pdf"`
-            });
+            // Set response headers untuk PDF
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', `inline; filename="${pelajaran.namaPelajaran}.pdf"`);
+            
+            // Kirim file PDF
             res.send(pelajaran.filePdfMateri);
+
         } catch (error) {
             next(error);
         }
     }
-
-    static async getPelajaranWithAllData(req: Request, res: Response, next: NextFunction) {
-    try {
-        const { id } = req.params;
-
-        // Cari pelajaran berdasarkan ID
-        const pelajaran = await PelajaranModel.findById(id)
-            .populate('idKelas', 'nomorKelas'); // Populate data kelas
-
-        if (!pelajaran) {
-            throw createHttpError(404, 'Pelajaran tidak ditemukan');
-        }
-
-        // Encode logo dan file PDF ke Base64
-        const logoBase64 = pelajaran.logo ? pelajaran.logo.toString('base64') : null;
-        const pdfBase64 = pelajaran.filePdfMateri ? pelajaran.filePdfMateri.toString('base64') : null;
-
-        // Kirim semua data dalam JSON
-        res.status(200).json({
-            id: pelajaran._id,
-            namaPelajaran: pelajaran.namaPelajaran,
-            idKelas: pelajaran.idKelas,
-            logo: logoBase64, // Base64 string untuk logo
-            filePdfMateri: pdfBase64, // Base64 string untuk file PDF
-        });
-    } catch (error) {
-        next(error);
-    }
-}
 }

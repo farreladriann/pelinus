@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import createHttpError from 'http-errors';
 import { KelasModel } from '../models/Kelas';
+import { PelajaranModel } from '../models/Pelajaran';
+import { KuisModel } from '../models/Kuis';
 
 export class KelasController {
     static async addKelas(req: Request, res: Response, next: NextFunction) {
@@ -35,12 +37,49 @@ export class KelasController {
         }
     }
 
-    static async getAllKelas(req: Request, res: Response, next: NextFunction) {
+    static async deleteKelas(req: Request, res: Response, next: NextFunction) {
+        const session = await KelasModel.db.startSession();
+        session.startTransaction();
         try {
-            const kelasList = await KelasModel.find();
-            res.status(200).json(kelasList);
+            const { idKelas } = req.params;
+
+            // Validasi idKelas
+            if (!idKelas) {
+                throw createHttpError(400, 'ID Kelas harus disediakan.');
+            }
+
+            // Cek apakah kelas dengan idKelas ada
+            const kelas = await KelasModel.findById(idKelas).session(session);
+            if (!kelas) {
+                throw createHttpError(404, 'Kelas tidak ditemukan.');
+            }
+
+            // Cari semua pelajaran yang terkait dengan kelas ini
+            const pelajaranTerkait = await PelajaranModel.find({ idKelas: idKelas }).session(session);
+            const pelajaranIds = pelajaranTerkait.map(p => p._id);
+
+            // Hapus semua kuis yang terkait dengan pelajaran-pelajaran tersebut
+            if (pelajaranIds.length > 0) {
+                await KuisModel.deleteMany({ idPelajaran: { $in: pelajaranIds } }).session(session);
+            }
+
+            // Hapus semua pelajaran yang terkait dengan kelas ini
+            await PelajaranModel.deleteMany({ idKelas }).session(session);
+
+            // Hapus kelas itu sendiri
+            await KelasModel.findByIdAndDelete(idKelas).session(session);
+
+            await session.commitTransaction();
+
+            res.status(200).json({
+                message: 'Kelas beserta pelajaran dan kuis terkait berhasil dihapus',
+            });
+
         } catch (error) {
+            await session.abortTransaction();
             next(error);
+        } finally {
+            session.endSession();
         }
     }
 }
