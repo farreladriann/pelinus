@@ -27,8 +27,6 @@ export class CacheController {
                 idPelajaran: string;
                 namaPelajaran: string;
                 logo: string | null;
-                hashLogo: string;
-                hashFilePdfMateri: string;
                 kuis: KuisCache[];
             }
 
@@ -53,8 +51,6 @@ export class CacheController {
                         idPelajaran: pelajaran._id.toString(),
                         namaPelajaran: pelajaran.namaPelajaran,
                         logo: pelajaran.logo ? pelajaran.logo.toString('base64') : null,
-                        hashLogo: pelajaran.hashLogo,
-                        hashFilePdfMateri: pelajaran.hashFilePdfMateri,
                         kuis: []
                     };
                     cacheData[kelasId].pelajaran.push(pelajaranData);

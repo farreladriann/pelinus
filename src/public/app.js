@@ -264,8 +264,7 @@ class PelinusApp {
                     <div>
                         <h4>${pelajaran.namaPelajaran}</h4>
                         <p>Kelas: ${pelajaran.kelasNomor}</p>
-                        <p>Hash Logo: ${pelajaran.hashLogo.substring(0, 20)}...</p>
-                        <p>Hash PDF: ${pelajaran.hashFilePdfMateri.substring(0, 20)}...</p>
+                        <p>ID: ${pelajaran.idPelajaran}</p>
                     </div>
                 </div>
                 <div class="item-actions">
@@ -509,8 +508,6 @@ class PelinusApp {
                     <div class="cache-pelajaran">
                         <h5>${pelajaran.namaPelajaran}</h5>
                         ${pelajaran.logo ? `<img src="data:image/png;base64,${pelajaran.logo}" class="cache-logo" alt="Logo">` : ''}
-                        <p>Hash Logo: ${pelajaran.hashLogo.substring(0, 20)}...</p>
-                        <p>Hash PDF: ${pelajaran.hashFilePdfMateri.substring(0, 20)}...</p>
                         <p>Jumlah Kuis: ${pelajaran.kuis.length}</p>
                         ${kuisHtml}
                     </div>

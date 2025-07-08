@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import createHttpError from 'http-errors';
-import crypto from 'crypto';
 import { PelajaranModel } from '../models/Pelajaran';
 import { KelasModel } from '../models/Kelas';
 
@@ -37,18 +36,12 @@ export class PelajaranController {
                 throw createHttpError(409, 'Pelajaran dengan nama tersebut sudah ada di kelas ini.');
             }
 
-            // Generate hashes for files
-            const hashLogo = crypto.createHash('sha256').update(files.logo[0].buffer).digest('hex');
-            const hashFilePdfMateri = crypto.createHash('sha256').update(files.filePdfMateri[0].buffer).digest('hex');
-
             // simpan pelajaran baru di database
             const pelajaranBaru = new PelajaranModel({
                 namaPelajaran: namaPelajaran.trim(),
                 logo: files.logo[0].buffer,
-                hashLogo,
                 idKelas,
                 filePdfMateri: files.filePdfMateri[0].buffer,
-                hashFilePdfMateri,
             });
 
             await pelajaranBaru.save();
@@ -61,8 +54,6 @@ export class PelajaranController {
                     idKelas: pelajaranBaru.idKelas,
                     logoSize: files.logo[0].size,
                     pdfSize: files.filePdfMateri[0].size,
-                    hashLogo: pelajaranBaru.hashLogo,
-                    hashFilePdfMateri: pelajaranBaru.hashFilePdfMateri,
                 },
             });
 
@@ -121,8 +112,6 @@ export class PelajaranController {
                 namaPelajaran: pelajaran.namaPelajaran,
                 idKelas: pelajaran.idKelas,
                 logo: pelajaran.logo ? pelajaran.logo.toString('base64') : null,
-                hashLogo: pelajaran.hashLogo,
-                hashFilePdfMateri: pelajaran.hashFilePdfMateri,
             }));
 
             res.status(200).json(result);
