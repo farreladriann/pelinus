@@ -209,7 +209,6 @@ class PelinusApp {
         const formData = new FormData();
         formData.append('namaPelajaran', document.getElementById('namaPelajaran').value);
         formData.append('idKelas', document.getElementById('idKelas').value);
-        formData.append('logo', document.getElementById('logo').files[0]);
         formData.append('filePdfMateri', document.getElementById('filePdfMateri').files[0]);
         
         try {
@@ -260,7 +259,6 @@ class PelinusApp {
             pelajaranCard.className = 'item-card';
             pelajaranCard.innerHTML = `
                 <div style="display: flex; align-items: center;">
-                    ${pelajaran.logo ? `<img src="data:image/png;base64,${pelajaran.logo}" class="pelajaran-logo" alt="Logo">` : ''}
                     <div>
                         <h4>${pelajaran.namaPelajaran}</h4>
                         <p>Kelas: ${pelajaran.kelasNomor}</p>
@@ -507,7 +505,6 @@ class PelinusApp {
                 pelajaranHtml += `
                     <div class="cache-pelajaran">
                         <h5>${pelajaran.namaPelajaran}</h5>
-                        ${pelajaran.logo ? `<img src="data:image/png;base64,${pelajaran.logo}" class="cache-logo" alt="Logo">` : ''}
                         <p>Jumlah Kuis: ${pelajaran.kuis.length}</p>
                         ${kuisHtml}
                     </div>

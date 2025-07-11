@@ -20,8 +20,8 @@ export class PelajaranController {
             }
 
             // Validasi file uploads
-            if (!files || !files.logo || !files.filePdfMateri) {
-                throw createHttpError(400, 'Logo dan file PDF materi harus diupload.');
+            if (!files || !files.filePdfMateri) {
+                throw createHttpError(400, 'File PDF materi harus diupload.');
             }
 
             // Validasi apakah kelas exists
@@ -39,7 +39,6 @@ export class PelajaranController {
             // simpan pelajaran baru di database
             const pelajaranBaru = new PelajaranModel({
                 namaPelajaran: namaPelajaran.trim(),
-                logo: files.logo[0].buffer,
                 idKelas,
                 filePdfMateri: files.filePdfMateri[0].buffer,
             });
@@ -52,7 +51,6 @@ export class PelajaranController {
                     _id: pelajaranBaru._id,
                     namaPelajaran: pelajaranBaru.namaPelajaran,
                     idKelas: pelajaranBaru.idKelas,
-                    logoSize: files.logo[0].size,
                     pdfSize: files.filePdfMateri[0].size,
                 },
             });
@@ -98,25 +96,6 @@ export class PelajaranController {
             next(error);
         } finally {
             session.endSession();
-        }
-    }
-
-    static async getAllPelajaranWithAllData(req: Request, res: Response, next: NextFunction) {
-        try {
-            const pelajaranList = await PelajaranModel.find()
-                .populate('idKelas', 'nomorKelas')
-                .select('-filePdfMateri');
-
-            const result = pelajaranList.map(pelajaran => ({
-                id: pelajaran._id,
-                namaPelajaran: pelajaran.namaPelajaran,
-                idKelas: pelajaran.idKelas,
-                logo: pelajaran.logo ? pelajaran.logo.toString('base64') : null,
-            }));
-
-            res.status(200).json(result);
-        } catch (error) {
-            next(error);
         }
     }
 

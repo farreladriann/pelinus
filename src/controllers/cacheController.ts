@@ -26,7 +26,6 @@ export class CacheController {
             interface PelajaranCache {
                 idPelajaran: string;
                 namaPelajaran: string;
-                logo: string | null;
                 kuis: KuisCache[];
             }
 
@@ -50,7 +49,6 @@ export class CacheController {
                     const pelajaranData: PelajaranCache = {
                         idPelajaran: pelajaran._id.toString(),
                         namaPelajaran: pelajaran.namaPelajaran,
-                        logo: pelajaran.logo ? pelajaran.logo.toString('base64') : null,
                         kuis: []
                     };
                     cacheData[kelasId].pelajaran.push(pelajaranData);

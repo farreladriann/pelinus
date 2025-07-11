@@ -5,9 +5,6 @@ export class Pelajaran {
   @prop({ required: true})
   public namaPelajaran!: string;
 
-  @prop({ required: true})
-  public logo!: Buffer;
-
   @prop({ ref: () => Kelas, required: true })
   public idKelas!: Ref<Kelas>;
 
